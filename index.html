@@ -4,3 +4,130 @@
   
 
 
+<script>
+// 字体设置功能
+(function() {
+  // 等待 DOM 加载完成
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFontSettings);
+  } else {
+    initFontSettings();
+  }
+  
+  function initFontSettings() {
+    // 从 localStorage 读取字体设置
+    const fontSettings = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
+    
+    // 应用字体设置到 CSS 变量
+    applyFontSettings(fontSettings);
+    
+    // 监听设置变化
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'fitness_font_settings') {
+        const newSettings = JSON.parse(e.newValue || '{}');
+        applyFontSettings(newSettings);
+      }
+    });
+    
+    // 延迟添加字体设置按钮到设置页
+    setTimeout(addFontSettingsUI, 1000);
+  }
+  
+  function applyFontSettings(settings) {
+    if (settings.fontSize) {
+      document.documentElement.style.setProperty('--font-size-base', settings.fontSize + 'px');
+      document.body.style.fontSize = settings.fontSize + 'px';
+    }
+    if (settings.textColor) {
+      document.documentElement.style.setProperty('--text-primary', settings.textColor);
+      document.body.style.color = settings.textColor;
+    }
+    if (settings.bgMain) {
+      document.documentElement.style.setProperty('--bg-primary', settings.bgMain);
+      document.body.style.background = settings.bgMain;
+    }
+    if (settings.bgAccent) {
+      document.documentElement.style.setProperty('--bg-card', settings.bgAccent);
+    }
+  }
+  
+  function addFontSettingsUI() {
+    // 查找设置页的数据管理部分
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+          const settingsPage = document.querySelector('[class*="content-area"] > div > div');
+          if (settingsPage && !document.getElementById('font-settings-panel')) {
+            createFontSettingsPanel();
+            observer.disconnect();
+          }
+        }
+      });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // 如果已经找到设置页，直接添加
+    setTimeout(createFontSettingsPanel, 500);
+  }
+  
+  function createFontSettingsPanel() {
+    if (document.getElementById('font-settings-panel')) return;
+    
+    const fontSettings = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
+    
+    const panel = document.createElement('div');
+    panel.id = 'font-settings-panel';
+    panel.style.cssText = 'margin-bottom:20px;padding:16px;background:var(--bg-card);border-radius:14px;border:1px solid var(--border-color)';
+    panel.innerHTML = `
+      <div style="font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;margin-bottom:12px">字体设置</div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">字体大小: <span id="fontSizeValue">${fontSettings.fontSize || 16}px</span></label>
+        <input type="range" id="fontSizeRange" min="12" max="24" value="${fontSettings.fontSize || 16}" style="width:100%">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">文字颜色</label>
+        <input type="color" id="textColorPicker" value="${fontSettings.textColor || '#e63946'}" style="width:100%;height:40px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated)">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">背景色</label>
+        <input type="color" id="bgMainPicker" value="${fontSettings.bgMain || '#0a0a0a'}" style="width:100%;height:40px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated)">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">卡片背景色</label>
+        <input type="color" id="bgAccentPicker" value="${fontSettings.bgAccent || '#141414'}" style="width:100%;height:40px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated)">
+      </div>
+      <button id="saveFontSettings" class="btn btn-primary btn-full touchable" style="margin-top:8px">保存设置</button>
+    `;
+    
+    // 插入到设置页的数据管理之前
+    const dataManagement = Array.from(document.querySelectorAll('div')).find(el => el.textContent === '数据管理' && el.style.fontSize === '13px');
+    if (dataManagement && dataManagement.parentElement) {
+      dataManagement.parentElement.parentElement.insertBefore(panel, dataManagement.parentElement);
+    } else {
+      // 如果找不到，就添加到设置页末尾
+      const settingsContainer = document.querySelector('[class*="content-area"] > div > div > div:last-child');
+      if (settingsContainer) {
+        settingsContainer.appendChild(panel);
+      }
+    }
+    
+    // 绑定事件
+    document.getElementById('fontSizeRange').oninput = function(e) {
+      document.getElementById('fontSizeValue').textContent = e.target.value + 'px';
+    };
+    
+    document.getElementById('saveFontSettings').onclick = function() {
+      const settings = {
+        fontSize: parseInt(document.getElementById('fontSizeRange').value),
+        textColor: document.getElementById('textColorPicker').value,
+        bgMain: document.getElementById('bgMainPicker').value,
+        bgAccent: document.getElementById('bgAccentPicker').value
+      };
+      localStorage.setItem('fitness_font_settings', JSON.stringify(settings));
+      applyFontSettings(settings);
+      alert('字体设置已保存');
+    };
+  }
+})();
+</script>
