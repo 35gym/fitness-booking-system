@@ -1,0 +1,24 @@
+{
+  "name": "约课系统",
+  "short_name": "约课",
+  "description": "健身教练约课管理系统",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0a0a'/%3E%3Crect x='15' y='38' width='14' height='24' rx='3' fill='%23e63946'/%3E%3Crect x='71' y='38' width='14' height='24' rx='3' fill='%23e63946'/%3E%3Crect x='29' y='42' width='10' height='16' rx='2' fill='%23e63946'/%3E%3Crect x='61' y='42' width='10' height='16' rx='2' fill='%23e63946'/%3E%3Crect x='39' y='47' width='22' height='6' rx='2' fill='%23e63946'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0a'/%3E%3Crect x='77' y='195' width='72' height='122' rx='15' fill='%23e63946'/%3E%3Crect x='363' y='195' width='72' height='122' rx='15' fill='%23e63946'/%3E%3Crect x='149' y='215' width='51' height='82' rx='10' fill='%23e63946'/%3E%3Crect x='312' y='215' width='51' height='82' rx='10' fill='%23e63946'/%3E%3Crect x='200' y='231' width='112' height='50' rx='10' fill='%23e63946'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
