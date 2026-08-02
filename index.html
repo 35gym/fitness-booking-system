@@ -5,9 +5,9 @@
 
 
 <script>
-// 字体设置功能
+<script>
+// 字体设置功能 - 改进版
 (function() {
-  // 等待 DOM 加载完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initFontSettings);
   } else {
@@ -17,20 +17,17 @@
   function initFontSettings() {
     // 从 localStorage 读取字体设置
     const fontSettings = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
-    
-    // 应用字体设置到 CSS 变量
     applyFontSettings(fontSettings);
     
     // 监听设置变化
     window.addEventListener('storage', function(e) {
       if (e.key === 'fitness_font_settings') {
-        const newSettings = JSON.parse(e.newValue || '{}');
-        applyFontSettings(newSettings);
+        applyFontSettings(JSON.parse(e.newValue || '{}'));
       }
     });
     
-    // 延迟添加字体设置按钮到设置页
-    setTimeout(addFontSettingsUI, 1000);
+    // 监听页面变化，动态注入字体设置面板
+    observeAndInject();
   }
   
   function applyFontSettings(settings) {
@@ -51,27 +48,27 @@
     }
   }
   
-  function addFontSettingsUI() {
-    // 查找设置页的数据管理部分
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.addedNodes.length) {
-          const settingsPage = document.querySelector('[class*="content-area"] > div > div');
-          if (settingsPage && !document.getElementById('font-settings-panel')) {
-            createFontSettingsPanel();
-            observer.disconnect();
-          }
-        }
-      });
+  function observeAndInject() {
+    const observer = new MutationObserver(function() {
+      // 检查是否在设置页
+      const pageHeader = document.querySelector('.page-header');
+      if (pageHeader && pageHeader.textContent.trim() === '设置' && !document.getElementById('font-settings-panel')) {
+        injectFontSettingsPanel();
+      }
     });
     
     observer.observe(document.body, { childList: true, subtree: true });
     
-    // 如果已经找到设置页，直接添加
-    setTimeout(createFontSettingsPanel, 500);
+    // 立即检查一次
+    setTimeout(function() {
+      const pageHeader = document.querySelector('.page-header');
+      if (pageHeader && pageHeader.textContent.trim() === '设置' && !document.getElementById('font-settings-panel')) {
+        injectFontSettingsPanel();
+      }
+    }, 500);
   }
   
-  function createFontSettingsPanel() {
+  function injectFontSettingsPanel() {
     if (document.getElementById('font-settings-panel')) return;
     
     const fontSettings = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
@@ -100,34 +97,46 @@
       <button id="saveFontSettings" class="btn btn-primary btn-full touchable" style="margin-top:8px">保存设置</button>
     `;
     
-    // 插入到设置页的数据管理之前
-    const dataManagement = Array.from(document.querySelectorAll('div')).find(el => el.textContent === '数据管理' && el.style.fontSize === '13px');
-    if (dataManagement && dataManagement.parentElement) {
-      dataManagement.parentElement.parentElement.insertBefore(panel, dataManagement.parentElement);
-    } else {
-      // 如果找不到，就添加到设置页末尾
-      const settingsContainer = document.querySelector('[class*="content-area"] > div > div > div:last-child');
+    // 找到设置页的内容区域（.content-area > div.anim-fade-in > div）
+    const contentArea = document.querySelector('.content-area > div.anim-fade-in');
+    if (contentArea && contentArea.children.length > 0) {
+      // 找到第一个div（设置页内容容器）
+      const settingsContainer = contentArea.querySelector('div');
       if (settingsContainer) {
-        settingsContainer.appendChild(panel);
+        // 找到.page-header，在它后面插入
+        const pageHeader = settingsContainer.querySelector('.page-header');
+        if (pageHeader && pageHeader.nextSibling) {
+          settingsContainer.insertBefore(panel, pageHeader.nextSibling);
+        } else {
+          settingsContainer.insertBefore(panel, settingsContainer.firstChild);
+        }
       }
     }
     
     // 绑定事件
-    document.getElementById('fontSizeRange').oninput = function(e) {
-      document.getElementById('fontSizeValue').textContent = e.target.value + 'px';
-    };
-    
-    document.getElementById('saveFontSettings').onclick = function() {
-      const settings = {
-        fontSize: parseInt(document.getElementById('fontSizeRange').value),
-        textColor: document.getElementById('textColorPicker').value,
-        bgMain: document.getElementById('bgMainPicker').value,
-        bgAccent: document.getElementById('bgAccentPicker').value
+    const fontSizeRange = document.getElementById('fontSizeRange');
+    const fontSizeValue = document.getElementById('fontSizeValue');
+    if (fontSizeRange && fontSizeValue) {
+      fontSizeRange.oninput = function(e) {
+        fontSizeValue.textContent = e.target.value + 'px';
       };
-      localStorage.setItem('fitness_font_settings', JSON.stringify(settings));
-      applyFontSettings(settings);
-      alert('字体设置已保存');
-    };
+    }
+    
+    const saveBtn = document.getElementById('saveFontSettings');
+    if (saveBtn) {
+      saveBtn.onclick = function() {
+        const settings = {
+          fontSize: parseInt(document.getElementById('fontSizeRange').value),
+          textColor: document.getElementById('textColorPicker').value,
+          bgMain: document.getElementById('bgMainPicker').value,
+          bgAccent: document.getElementById('bgAccentPicker').value
+        };
+        localStorage.setItem('fitness_font_settings', JSON.stringify(settings));
+        applyFontSettings(settings);
+        alert('字体设置已保存');
+      };
+    }
   }
 })();
+
 </script>
