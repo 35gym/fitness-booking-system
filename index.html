@@ -6,135 +6,108 @@
 
 <script>
 <script>
-// 字体设置功能 - 改进版
+// 字体设置功能 v3 - setInterval检测
 (function() {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initFontSettings);
-  } else {
-    initFontSettings();
+  // 应用已保存的设置
+  const saved = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
+  if (saved.fontSize) {
+    document.documentElement.style.setProperty('--font-size-base', saved.fontSize + 'px');
+    document.body.style.fontSize = saved.fontSize + 'px';
+  }
+  if (saved.textColor) {
+    document.documentElement.style.setProperty('--text-primary', saved.textColor);
+    document.body.style.color = saved.textColor;
+  }
+  if (saved.bgMain) {
+    document.documentElement.style.setProperty('--bg-primary', saved.bgMain);
+    document.body.style.background = saved.bgMain;
+  }
+  if (saved.bgAccent) {
+    document.documentElement.style.setProperty('--bg-card', saved.bgAccent);
   }
   
-  function initFontSettings() {
-    // 从 localStorage 读取字体设置
-    const fontSettings = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
-    applyFontSettings(fontSettings);
-    
-    // 监听设置变化
-    window.addEventListener('storage', function(e) {
-      if (e.key === 'fitness_font_settings') {
-        applyFontSettings(JSON.parse(e.newValue || '{}'));
-      }
-    });
-    
-    // 监听页面变化，动态注入字体设置面板
-    observeAndInject();
-  }
-  
-  function applyFontSettings(settings) {
-    if (settings.fontSize) {
-      document.documentElement.style.setProperty('--font-size-base', settings.fontSize + 'px');
-      document.body.style.fontSize = settings.fontSize + 'px';
-    }
-    if (settings.textColor) {
-      document.documentElement.style.setProperty('--text-primary', settings.textColor);
-      document.body.style.color = settings.textColor;
-    }
-    if (settings.bgMain) {
-      document.documentElement.style.setProperty('--bg-primary', settings.bgMain);
-      document.body.style.background = settings.bgMain;
-    }
-    if (settings.bgAccent) {
-      document.documentElement.style.setProperty('--bg-card', settings.bgAccent);
-    }
-  }
-  
-  function observeAndInject() {
-    const observer = new MutationObserver(function() {
-      // 检查是否在设置页
-      const pageHeader = document.querySelector('.page-header');
-      if (pageHeader && pageHeader.textContent.trim() === '设置' && !document.getElementById('font-settings-panel')) {
-        injectFontSettingsPanel();
-      }
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // 立即检查一次
-    setTimeout(function() {
-      const pageHeader = document.querySelector('.page-header');
-      if (pageHeader && pageHeader.textContent.trim() === '设置' && !document.getElementById('font-settings-panel')) {
-        injectFontSettingsPanel();
-      }
-    }, 500);
-  }
-  
-  function injectFontSettingsPanel() {
+  // 持续检测是否进入设置页
+  const checkInterval = setInterval(function() {
     if (document.getElementById('font-settings-panel')) return;
     
-    const fontSettings = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
+    // 查找包含"导出数据"的元素
+    const allDivs = Array.from(document.querySelectorAll('div'));
+    const exportBtn = allDivs.find(el => el.textContent === '导出数据' && el.className.includes('item-label'));
+    
+    if (exportBtn) {
+      clearInterval(checkInterval);
+      injectPanel(exportBtn);
+    }
+  }, 500);
+  
+  function injectPanel(exportBtn) {
+    const saved = JSON.parse(localStorage.getItem('fitness_font_settings') || '{}');
     
     const panel = document.createElement('div');
     panel.id = 'font-settings-panel';
-    panel.style.cssText = 'margin-bottom:20px;padding:16px;background:var(--bg-card);border-radius:14px;border:1px solid var(--border-color)';
+    panel.style.cssText = 'margin-bottom:20px;padding:16px;background:var(--bg-card,#141414);border-radius:14px;border:1px solid var(--border-color,#333)';
     panel.innerHTML = `
-      <div style="font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;margin-bottom:12px">字体设置</div>
+      <div style="font-size:13px;color:var(--text-muted,#888);font-weight:600;letter-spacing:0.5px;margin-bottom:12px">字体设置</div>
       <div style="margin-bottom:12px">
-        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">字体大小: <span id="fontSizeValue">${fontSettings.fontSize || 16}px</span></label>
-        <input type="range" id="fontSizeRange" min="12" max="24" value="${fontSettings.fontSize || 16}" style="width:100%">
+        <label style="display:block;font-size:14px;color:var(--text-secondary,#ccc);margin-bottom:6px">字体大小: <span id="fontSizeValue">${saved.fontSize || 16}px</span></label>
+        <input type="range" id="fontSizeRange" min="12" max="24" value="${saved.fontSize || 16}" style="width:100%">
       </div>
       <div style="margin-bottom:12px">
-        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">文字颜色</label>
-        <input type="color" id="textColorPicker" value="${fontSettings.textColor || '#e63946'}" style="width:100%;height:40px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated)">
+        <label style="display:block;font-size:14px;color:var(--text-secondary,#ccc);margin-bottom:6px">文字颜色</label>
+        <input type="color" id="textColorPicker" value="${saved.textColor || '#e63946'}" style="width:100%;height:40px;border:1px solid var(--border-color,#333);border-radius:8px;background:var(--bg-elevated,#1a1a1a)">
       </div>
       <div style="margin-bottom:12px">
-        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">背景色</label>
-        <input type="color" id="bgMainPicker" value="${fontSettings.bgMain || '#0a0a0a'}" style="width:100%;height:40px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated)">
+        <label style="display:block;font-size:14px;color:var(--text-secondary,#ccc);margin-bottom:6px">背景色</label>
+        <input type="color" id="bgMainPicker" value="${saved.bgMain || '#0a0a0a'}" style="width:100%;height:40px;border:1px solid var(--border-color,#333);border-radius:8px;background:var(--bg-elevated,#1a1a1a)">
       </div>
       <div style="margin-bottom:12px">
-        <label style="display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px">卡片背景色</label>
-        <input type="color" id="bgAccentPicker" value="${fontSettings.bgAccent || '#141414'}" style="width:100%;height:40px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated)">
+        <label style="display:block;font-size:14px;color:var(--text-secondary,#ccc);margin-bottom:6px">卡片背景色</label>
+        <input type="color" id="bgAccentPicker" value="${saved.bgAccent || '#141414'}" style="width:100%;height:40px;border:1px solid var(--border-color,#333);border-radius:8px;background:var(--bg-elevated,#1a1a1a)">
       </div>
-      <button id="saveFontSettings" class="btn btn-primary btn-full touchable" style="margin-top:8px">保存设置</button>
+      <button id="saveFontSettings" style="width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">保存设置</button>
     `;
     
-    // 找到设置页的内容区域（.content-area > div.anim-fade-in > div）
-    const contentArea = document.querySelector('.content-area > div.anim-fade-in');
-    if (contentArea && contentArea.children.length > 0) {
-      // 找到第一个div（设置页内容容器）
-      const settingsContainer = contentArea.querySelector('div');
-      if (settingsContainer) {
-        // 找到.page-header，在它后面插入
-        const pageHeader = settingsContainer.querySelector('.page-header');
-        if (pageHeader && pageHeader.nextSibling) {
-          settingsContainer.insertBefore(panel, pageHeader.nextSibling);
-        } else {
-          settingsContainer.insertBefore(panel, settingsContainer.firstChild);
-        }
-      }
+    // 找到"数据管理"的容器，在它之前插入
+    let container = exportBtn;
+    while (container && !container.className.includes('settings-group')) {
+      container = container.parentElement;
     }
     
-    // 绑定事件
-    const fontSizeRange = document.getElementById('fontSizeRange');
-    const fontSizeValue = document.getElementById('fontSizeValue');
-    if (fontSizeRange && fontSizeValue) {
-      fontSizeRange.oninput = function(e) {
-        fontSizeValue.textContent = e.target.value + 'px';
-      };
-    }
-    
-    const saveBtn = document.getElementById('saveFontSettings');
-    if (saveBtn) {
-      saveBtn.onclick = function() {
-        const settings = {
-          fontSize: parseInt(document.getElementById('fontSizeRange').value),
-          textColor: document.getElementById('textColorPicker').value,
-          bgMain: document.getElementById('bgMainPicker').value,
-          bgAccent: document.getElementById('bgAccentPicker').value
+    if (container && container.parentElement) {
+      container.parentElement.insertBefore(panel, container);
+      
+      // 绑定事件
+      const fontSizeRange = document.getElementById('fontSizeRange');
+      const fontSizeValue = document.getElementById('fontSizeValue');
+      if (fontSizeRange && fontSizeValue) {
+        fontSizeRange.oninput = function(e) {
+          fontSizeValue.textContent = e.target.value + 'px';
         };
-        localStorage.setItem('fitness_font_settings', JSON.stringify(settings));
-        applyFontSettings(settings);
-        alert('字体设置已保存');
-      };
+      }
+      
+      const saveBtn = document.getElementById('saveFontSettings');
+      if (saveBtn) {
+        saveBtn.onclick = function() {
+          const settings = {
+            fontSize: parseInt(document.getElementById('fontSizeRange').value),
+            textColor: document.getElementById('textColorPicker').value,
+            bgMain: document.getElementById('bgMainPicker').value,
+            bgAccent: document.getElementById('bgAccentPicker').value
+          };
+          localStorage.setItem('fitness_font_settings', JSON.stringify(settings));
+          
+          // 立即应用
+          document.documentElement.style.setProperty('--font-size-base', settings.fontSize + 'px');
+          document.body.style.fontSize = settings.fontSize + 'px';
+          document.documentElement.style.setProperty('--text-primary', settings.textColor);
+          document.body.style.color = settings.textColor;
+          document.documentElement.style.setProperty('--bg-primary', settings.bgMain);
+          document.body.style.background = settings.bgMain;
+          document.documentElement.style.setProperty('--bg-card', settings.bgAccent);
+          
+          alert('字体设置已保存');
+        };
+      }
     }
   }
 })();
